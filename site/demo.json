@@ -184,8 +184,15 @@
       "savings": 450,
       "verdict": "great",
       "verification": {
-        "status": "error",
-        "message": "Search returned no recent prices for this model."
+        "status": "unconfirmed",
+        "summary": "Searches found store listings but no recent used or open-box prices for this model in Israel, so the range above is the original estimate.",
+        "redFlags": [],
+        "sources": [
+          {
+            "url": "https://www.zap.co.il/",
+            "title": "Zap"
+          }
+        ]
       }
     },
     {
@@ -540,5 +547,5 @@
       "verification": null
     }
   ],
-  "costUsd": 0.04
+  "costUsd": 0.29
 }

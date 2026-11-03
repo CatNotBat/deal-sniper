@@ -14,7 +14,7 @@ describe("demo data", () => {
 
   it("has a plausible cost", () => {
     expect(data.costUsd).toBeGreaterThan(0);
-    expect(data.costUsd).toBeLessThan(0.1);
+    expect(data.costUsd).toBeLessThan(0.5);
   });
 
   it("gives each result the verdict computeVerdict would", () => {

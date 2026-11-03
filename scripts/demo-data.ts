@@ -105,8 +105,10 @@ const items: ItemConfig[] = [
     confidence: "medium",
     reasoning: "27-inch 4K USB-C monitor; open-box units list around ₪1,500–1,900.",
     verification: {
-      status: "error",
-      message: "Search returned no recent prices for this model.",
+      status: "unconfirmed",
+      summary: "Searches found store listings but no recent used or open-box prices for this model in Israel, so the range above is the original estimate.",
+      redFlags: [],
+      sources: [{ url: "https://www.zap.co.il/", title: "Zap" }],
     },
   },
   {
@@ -369,7 +371,8 @@ function toResult(c: ItemConfig): DealResult {
 }
 
 const results = items.map(toResult).sort(compareDeals);
-const costUsd = 0.04;
+// 18 listings screened with Haiku plus 4 web-search checks with Sonnet, at measured prices.
+const costUsd = 0.29;
 
 const outPath = fileURLToPath(new URL("../site/demo.json", import.meta.url));
 writeFileSync(outPath, JSON.stringify({ results, costUsd }, null, 2) + "\n");

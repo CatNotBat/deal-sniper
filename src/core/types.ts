@@ -40,7 +40,7 @@ export interface DealResult {
   product: string; // normalised English product name
   category: Category;
   marketLow: number | null;
-  marketHigh: number | null; // used-market range, listing currency
+  marketHigh: number | null; // market range for the listing's condition, listing currency
   confidence: Confidence;
   reasoning: string; // one short sentence
   ratio: number | null; // price / midpoint

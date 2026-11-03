@@ -131,7 +131,7 @@ export function renderDeal(
     if (r.marketLow === null || r.marketHigh === null) {
       marketEl.setAttribute("hidden", "");
     } else {
-      marketEl.textContent = `Used market ${formatMoney(r.marketLow, l.currency)}–${formatMoney(r.marketHigh, l.currency)}`;
+      marketEl.textContent = `Market ${formatMoney(r.marketLow, l.currency)}–${formatMoney(r.marketHigh, l.currency)}`;
     }
   }
 
