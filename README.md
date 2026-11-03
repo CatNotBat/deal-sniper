@@ -15,7 +15,7 @@ facebook.com/marketplace            your browser, github.io page                
 ┌──────────────────────┐  #fragment ┌───────────────────────────────┐   HTTPS   ┌──────────────────────┐
 │ bookmarklet          │ ─────────▶ │ app.html                      │ ────────▶ │ Claude Haiku 5.5     │
 │ scroll + read cards  │  deflate + │ 1. screen every listing       │           │ structured output    │
-│ (shadow-DOM panel)   │  base64url │ 2. verify the top 5           │ ────────▶ │ Claude Sonnet 5.5    │
+│ (shadow-DOM panel)   │  base64url │ 2. verify the top 3           │ ────────▶ │ Claude Sonnet 5.5    │
 └──────────────────────┘            │ 3. rank, show cost            │           │ + web search         │
                                     └───────────────────────────────┘           └──────────────────────┘
 ```
@@ -24,8 +24,8 @@ facebook.com/marketplace            your browser, github.io page                
 2. **Hand off.** Listings are JSON-encoded, compressed with `CompressionStream("deflate-raw")` and placed in the URL **fragment** of the results page. Fragments are never sent to a server; the page removes it from the address bar as soon as it has read it.
 3. **Screen.** Claude Haiku 5.5 reads listings in batches of 40 and returns, as [structured output](https://docs.claude.com/en/docs/build-with-claude/structured-outputs) validated by a zod schema, the exact product (Hebrew and English titles alike) and a used-market price range in the listing's own currency. It doesn't decide what counts as a deal.
 4. **Score.** The verdict is computed in plain code from asking price ÷ market midpoint: ≤ 60% is a *steal*, ≤ 75% *great*, ≤ 85% *good*. A low-confidence estimate can't produce a steal. This keeps the ranking deterministic and testable.
-5. **Verify.** The top five go to Claude Sonnet 5.5 with the web search tool, which looks up recent second-hand prices, revises the range, lists red flags and links its sources.
-6. **Show the bill.** Token usage and searches from each response are priced and shown live. A scan of about 150 listings typically costs a few cents.
+5. **Verify.** The top three (configurable) go to Claude Sonnet 5.5 with the web search tool, which looks up recent second-hand prices, revises the range, lists red flags and links its sources.
+6. **Show the bill.** Token usage and searches from each response are priced and shown live. Screening 150 listings with Haiku costs about a cent; each web-search verification about $0.07, so a typical scan (top 3 verified) is around $0.20. The estimate is shown before you start.
 
 ## Use it
 

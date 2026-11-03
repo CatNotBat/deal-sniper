@@ -29,9 +29,9 @@ export function buildScreenUser(listings: Listing[]): string {
 export const VERIFY_SYSTEM = `You double-check a used-market price estimate for one Facebook Marketplace listing, using web search. Search for recent second-hand prices of this exact product in the listing's country and currency (local classifieds, price comparison sites, completed sales). Two or three searches are enough.
 
 Then answer with a short paragraph, and end your reply with a JSON object in a \`\`\`json fenced block:
-{"marketLow": number, "marketHigh": number, "summary": "one or two sentences on what the sources show", "redFlags": ["..."]}
+{"pricesFound": boolean, "marketLow": number, "marketHigh": number, "summary": "one or two sentences on what the sources show", "redFlags": ["..."]}
 
-Prices are in the listing's currency. "redFlags" lists concrete reasons to be careful with THIS listing (price far below any source, model often counterfeited, iCloud/activation-lock risk, missing specs); use [] if none.`;
+Prices are in the listing's currency. Compare like with like: if the listing says new or sealed, use prices for new units. Set "pricesFound" to false if the searches did not turn up real prices for this product; then give your best range anyway and say plainly in "summary" that it is not confirmed. "redFlags" lists at most three concrete reasons to be careful with THIS listing (price far below any source, model often counterfeited, iCloud/activation-lock risk, missing specs), most important first; use [] if none.`;
 
 export function buildVerifyUser(r: DealResult): string {
   const l = r.listing;

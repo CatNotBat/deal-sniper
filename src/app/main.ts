@@ -16,7 +16,15 @@ const SETTINGS = "ds:settings";
 const LISTINGS = "ds:listings";
 const RESULTS = "ds:results";
 
-const VIEW_IDS = ["view-empty", "view-key", "view-run", "view-error", "view-results"] as const;
+const VIEW_IDS = ["view-empty", "view-key", "view-ready", "view-run", "view-error", "view-results"] as const;
+
+// Rough per-run cost, from live runs (Nov 2026): screening ~150 tokens in / ~80 out per listing,
+// one web-search verification ~$0.07 with Sonnet 5.5. Shown before every paid run.
+const SCREEN_USD_PER_LISTING: Record<string, number> = {
+  "claude-haiku-5-5": 0.00006,
+  "claude-sonnet-5-5": 0.0011,
+};
+const VERIFY_USD_EACH = 0.07;
 
 interface Settings {
   screenModel: string;
@@ -56,7 +64,7 @@ function forgetKey(): void {
 }
 
 function loadSettings(): Settings {
-  const defaults: Settings = { screenModel: MODELS.screen, verifyTop: 5 };
+  const defaults: Settings = { screenModel: MODELS.screen, verifyTop: 3 };
   const raw = read("local", SETTINGS);
   if (!raw) return defaults;
   try {
@@ -118,6 +126,11 @@ const settingsKeyStatus = byId("settings-key-status");
 const settingsForget = byId<HTMLButtonElement>("settings-forget");
 
 const tpl = byId<HTMLTemplateElement>("tpl-deal");
+
+const readyCount = byId("ready-count");
+const readyEstimate = byId("ready-estimate");
+const readyStart = byId<HTMLButtonElement>("ready-start");
+const readySettings = byId<HTMLButtonElement>("ready-settings");
 
 let listings: Listing[] = [];
 let results: DealResult[] = [];
@@ -313,6 +326,19 @@ function handleRunError(err: unknown): void {
   showError("Something went wrong", (err as Error).message);
 }
 
+function estimateUsd(n: number, s: Settings): number {
+  const perListing = SCREEN_USD_PER_LISTING[s.screenModel] ?? SCREEN_USD_PER_LISTING["claude-sonnet-5-5"]!;
+  return n * perListing + Math.min(s.verifyTop, n) * VERIFY_USD_EACH;
+}
+
+/** Listings can arrive from any link, so a paid run never starts without a click here. */
+function showReady(): void {
+  const n = listings.length;
+  readyCount.textContent = `${n} listing${n === 1 ? "" : "s"}`;
+  readyEstimate.textContent = `about ${formatUsd(estimateUsd(n, loadSettings()))}`;
+  show("view-ready");
+}
+
 function showKeyView(): void {
   keyCount.textContent = `${listings.length} listings`;
   show("view-key");
@@ -406,8 +432,16 @@ async function boot(): Promise<void> {
     return;
   }
 
-  void run();
+  showReady();
 }
+
+readyStart.addEventListener("click", () => {
+  void run();
+});
+
+readySettings.addEventListener("click", () => {
+  settingsBtn.click();
+});
 
 keyForm.addEventListener("submit", (ev) => {
   ev.preventDefault();
@@ -453,6 +487,7 @@ settingsDialog.addEventListener("close", () => {
       ? Math.min(10, Math.max(0, verifyRaw))
       : s.verifyTop;
     write("local", SETTINGS, JSON.stringify({ screenModel: model, verifyTop }));
+    if (!byId("view-ready").hidden) showReady();
   }
 });
 

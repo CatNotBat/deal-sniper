@@ -168,9 +168,14 @@ export function renderDeal(
       verifyHead.replaceChildren(spinner, doc.createTextNode("Checking prices on the web…"));
     } else if (r.verification === null) {
       verify.setAttribute("hidden", "");
-    } else if (r.verification.status === "ok") {
+    } else if (r.verification.status === "ok" || r.verification.status === "unconfirmed") {
       verify.removeAttribute("hidden");
-      verifyHead.textContent = "✓ Verified with web search";
+      if (r.verification.status === "ok") {
+        verifyHead.textContent = "✓ Verified with web search";
+      } else {
+        verify.classList.add("unconfirmed");
+        verifyHead.textContent = "Search couldn't confirm the price";
+      }
       if (verifySummary) verifySummary.textContent = r.verification.summary;
       const flags = frag.querySelector(".flags");
       if (flags) {
@@ -182,11 +187,15 @@ export function renderDeal(
       }
       const sources = frag.querySelector(".sources");
       if (sources) {
+        const seenHosts = new Set<string>();
         for (const s of r.verification.sources) {
           if (!isHttpUrl(s.url)) continue;
+          const host = hostnameWithoutWww(s.url);
+          if (seenHosts.has(host)) continue;
+          seenHosts.add(host);
           const item = doc.createElement("li");
           const a = doc.createElement("a");
-          a.textContent = hostnameWithoutWww(s.url);
+          a.textContent = host;
           a.title = s.title;
           a.target = "_blank";
           a.rel = "noopener noreferrer";

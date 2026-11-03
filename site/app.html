@@ -56,6 +56,18 @@
       </div>
     </section>
 
+    <!-- Listings received, waiting for the user to start a paid run -->
+    <section class="view narrow" id="view-ready" hidden>
+      <div class="panel">
+        <h1><span id="ready-count">0 listings</span> ready</h1>
+        <p class="sub">Estimated cost <strong id="ready-estimate">—</strong>, charged to your API key. The running total is shown as it goes.</p>
+        <div class="cta mt">
+          <button class="btn btn-accent" id="ready-start" type="button">Find deals</button>
+          <button class="btn btn-ghost" id="ready-settings" type="button">Settings</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Pipeline running -->
     <section class="view narrow" id="view-run" hidden>
       <div class="panel">
@@ -121,7 +133,7 @@
       <div class="field">
         <label for="settings-verify">Verify the top N deals with web search</label>
         <input id="settings-verify" type="number" min="0" max="10" step="1">
-        <small>Uses Claude Sonnet 5.5 and up to three searches per deal (about $0.03 each). 0 turns it off.</small>
+        <small>Uses Claude Sonnet 5.5 and up to three searches per deal (about $0.07 per deal). 0 turns it off.</small>
       </div>
       <div class="dialog-actions">
         <button class="btn btn-ghost btn-sm" value="cancel" formnovalidate>Close</button>

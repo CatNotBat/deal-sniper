@@ -151,7 +151,7 @@ describe("runPipeline", () => {
         {
           type: "text",
           text: '```json\n{"marketLow": 180, "marketHigh": 220, "summary": "ok", "redFlags": []}\n```',
-          citations: null,
+          citations: [{ type: "web_search_result_location", title: "S", url: "https://s.com/1" }],
         },
       ],
     }));
@@ -181,7 +181,7 @@ describe("runPipeline", () => {
           {
             type: "text",
             text: '```json\n{"marketLow": 180, "marketHigh": 220, "summary": "ok", "redFlags": []}\n```',
-            citations: null,
+            citations: [{ type: "web_search_result_location", title: "S", url: "https://s.com/1" }],
           },
         ],
       });
@@ -227,6 +227,67 @@ describe("runPipeline", () => {
         "https://c.com/3",
       ]);
     }
+  });
+
+  it("reports unconfirmed, keeping the screening range, when search found no prices", async () => {
+    const parse = vi.fn(async () => okScreen([item("1")]));
+    const create = vi.fn(async () => ({
+      stop_reason: "end_turn",
+      usage: USAGE,
+      content: [
+        {
+          type: "text",
+          text: '```json\n{"pricesFound": false, "marketLow": 10, "marketHigh": 20, "summary": "not confirmed", "redFlags": []}\n```',
+          citations: [{ type: "web_search_result_location", title: "S", url: "https://s.com/1" }],
+        },
+      ],
+    }));
+
+    const res = await runPipeline([listing("1")], { client: fakeClient(parse, create) });
+
+    const r = res.results[0]!;
+    expect(r.verification).toMatchObject({ status: "unconfirmed", summary: "not confirmed" });
+    expect(r.marketLow).toBe(180);
+  });
+
+  it("reports unconfirmed when search returned no sources", async () => {
+    const parse = vi.fn(async () => okScreen([item("1")]));
+    const create = vi.fn(async () => ({
+      stop_reason: "end_turn",
+      usage: USAGE,
+      content: [
+        {
+          type: "text",
+          text: '```json\n{"marketLow": 180, "marketHigh": 220, "summary": "ok", "redFlags": []}\n```',
+          citations: null,
+        },
+      ],
+    }));
+
+    const res = await runPipeline([listing("1")], { client: fakeClient(parse, create) });
+
+    expect(res.results[0]!.verification).toMatchObject({ status: "unconfirmed" });
+  });
+
+  it("keeps at most three red flags", async () => {
+    const parse = vi.fn(async () => okScreen([item("1")]));
+    const create = vi.fn(async () => ({
+      stop_reason: "end_turn",
+      usage: USAGE,
+      content: [
+        {
+          type: "text",
+          text: '```json\n{"marketLow": 180, "marketHigh": 220, "summary": "ok", "redFlags": ["a", "b", "c", "d"]}\n```',
+          citations: [{ type: "web_search_result_location", title: "S", url: "https://s.com/1" }],
+        },
+      ],
+    }));
+
+    const res = await runPipeline([listing("1")], { client: fakeClient(parse, create) });
+
+    const v = res.results[0]!.verification;
+    expect(v?.status).toBe("ok");
+    if (v?.status === "ok") expect(v.redFlags).toEqual(["a", "b", "c"]);
   });
 
   it("marks malformed verify text as an error but the run still succeeds", async () => {

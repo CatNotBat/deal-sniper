@@ -49,6 +49,8 @@ export interface DealResult {
   verification:
     | null
     | { status: "ok"; summary: string; redFlags: string[]; sources: Source[] }
+    // Search ran but found no usable prices; the screening estimate is kept.
+    | { status: "unconfirmed"; summary: string; redFlags: string[]; sources: Source[] }
     | { status: "error"; message: string };
 }
 

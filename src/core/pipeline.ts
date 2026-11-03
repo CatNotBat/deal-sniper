@@ -22,7 +22,10 @@ export interface PipelineOptions {
 
 type VerifyOutcome =
   | { status: "ok"; summary: string; redFlags: string[]; sources: Source[]; marketLow: number; marketHigh: number }
+  | { status: "unconfirmed"; summary: string; redFlags: string[]; sources: Source[] }
   | { status: "error"; message: string };
+
+const MAX_RED_FLAGS = 3;
 
 function isAuthOrAbort(err: unknown): boolean {
   return err instanceof AuthenticationError || err instanceof APIUserAbortError;
@@ -145,7 +148,7 @@ export async function runPipeline(
     client,
     screenModel = MODELS.screen,
     verifyModel = MODELS.verify,
-    verifyTop = 5,
+    verifyTop = 3,
     batchSize = 40,
     concurrency = 3,
     signal,
@@ -353,10 +356,15 @@ export async function runPipeline(
         message: "Verification JSON failed validation" + (webSearchError ? ` (${webSearchError})` : ""),
       };
     }
+    const redFlags = result.data.redFlags.slice(0, MAX_RED_FLAGS);
+    // Only call it verified when search ran cleanly, returned pages and the model says they held prices.
+    if (!result.data.pricesFound || finalSources.length === 0 || webSearchError !== "") {
+      return { status: "unconfirmed", summary: result.data.summary, redFlags, sources: finalSources };
+    }
     return {
       status: "ok",
       summary: result.data.summary,
-      redFlags: result.data.redFlags,
+      redFlags,
       sources: finalSources,
       marketLow: result.data.marketLow,
       marketHigh: result.data.marketHigh,
@@ -396,6 +404,8 @@ export async function runPipeline(
         redFlags: outcome.redFlags,
         sources: outcome.sources,
       };
+    } else if (outcome.status === "unconfirmed") {
+      r.verification = outcome;
     } else {
       r.verification = { status: "error", message: outcome.message };
     }

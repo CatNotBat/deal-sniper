@@ -72,6 +72,7 @@ export const VerifySchema = z
     marketHigh: z.number().min(0),
     summary: z.string(),
     redFlags: z.array(z.string()),
+    pricesFound: z.boolean().default(true),
   })
   .refine((d) => d.marketLow <= d.marketHigh, {
     message: "marketLow must be <= marketHigh",

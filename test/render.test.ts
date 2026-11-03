@@ -155,6 +155,27 @@ describe("renderDeal", () => {
     expect(li.querySelectorAll(".flags li")).toHaveLength(1);
     expect(li.querySelectorAll(".sources a")).toHaveLength(1);
   });
+
+  it("labels an unconfirmed check honestly and dedupes source hosts", () => {
+    const li = renderDeal(
+      doc,
+      tpl,
+      result({
+        verification: {
+          status: "unconfirmed",
+          summary: "no prices found",
+          redFlags: [],
+          sources: [
+            { url: "https://www.zap.co.il/a", title: "a" },
+            { url: "https://zap.co.il/b", title: "b" },
+          ],
+        },
+      }),
+    );
+    expect(li.querySelector(".verify")!.classList.contains("unconfirmed")).toBe(true);
+    expect(li.querySelector(".verify-head")!.textContent).not.toContain("Verified");
+    expect(li.querySelectorAll(".sources a")).toHaveLength(1);
+  });
 });
 
 describe("renderSkipped", () => {

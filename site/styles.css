@@ -240,6 +240,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .verify-head { display: flex; align-items: center; gap: 8px; font: 600 12px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--good); }
 .verify.pending .verify-head { color: var(--muted); }
 .verify.failed .verify-head { color: var(--faint); }
+.verify.unconfirmed .verify-head { color: var(--muted); }
 .verify p { margin: 0; color: var(--muted); }
 .flags { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .flags li { padding-left: 18px; position: relative; color: var(--great); }
