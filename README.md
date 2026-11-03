@@ -1,150 +1,74 @@
 # Deal Sniper
 
-A bookmarklet + Cloudflare Worker that finds underpriced electronics on Facebook Marketplace by cross-referencing eBay prices and using AI to filter deals.
+Find underpriced electronics on Facebook Marketplace. A bookmarklet reads the search you have open, Claude estimates what each item really sells for used, the best candidates are double-checked with live web search, and you get a ranked list of what is worth a message.
 
-## How It Works
+It runs entirely in your browser with your own Anthropic API key. No server, no extension, no account.
 
-1. **Bookmarklet** scrapes visible FB Marketplace listings (title, price, image, URL)
-2. **Cloudflare Worker** receives the listings and:
-   - Translates Hebrew product names to English (לנובו → Lenovo, דל → Dell, etc.)
-   - Filters out non-electronics (furniture, accessories)
-   - Searches eBay Browse API for each item's market price
-   - Sends candidates priced >15% below eBay median to Claude AI
-   - Claude rates deals as STEAL / GREAT / GOOD (everything else is filtered out)
-3. Results page shows only deals worth checking, ranked by value
+**[Try the sample run →](https://catnotbat.github.io/deal-sniper/app.html?demo)** &nbsp;·&nbsp; **[Install →](https://catnotbat.github.io/deal-sniper/#install)**
 
-## Prerequisites
+<!-- screenshot: docs/screenshot.png -->
 
-- [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works)
-- [eBay Developer account](https://developer.ebay.com) (free, 5000 API calls/day)
-- [Anthropic API key](https://console.anthropic.com) (for Claude AI analysis)
-- Node.js 18+
+## How it works
 
-## Setup
+```
+facebook.com/marketplace            your browser, github.io page                api.anthropic.com
+┌──────────────────────┐  #fragment ┌───────────────────────────────┐   HTTPS   ┌──────────────────────┐
+│ bookmarklet          │ ─────────▶ │ app.html                      │ ────────▶ │ Claude Haiku 5.5     │
+│ scroll + read cards  │  deflate + │ 1. screen every listing       │           │ structured output    │
+│ (shadow-DOM panel)   │  base64url │ 2. verify the top 5           │ ────────▶ │ Claude Sonnet 5.5    │
+└──────────────────────┘            │ 3. rank, show cost            │           │ + web search         │
+                                    └───────────────────────────────┘           └──────────────────────┘
+```
 
-### 1. Clone and install
+1. **Scrape.** The bookmarklet finds listing cards on the Marketplace page, auto-scrolls to load more, and parses title, price (any currency, including struck-through "was" prices), location and photo. Its panel lives in a shadow root, so Facebook's CSS can't touch it.
+2. **Hand off.** Listings are JSON-encoded, compressed with `CompressionStream("deflate-raw")` and placed in the URL **fragment** of the results page. Fragments are never sent to a server; the page removes it from the address bar as soon as it has read it.
+3. **Screen.** Claude Haiku 5.5 reads listings in batches of 40 and returns, as [structured output](https://docs.claude.com/en/docs/build-with-claude/structured-outputs) validated by a zod schema, the exact product (Hebrew and English titles alike) and a used-market price range in the listing's own currency. It doesn't decide what counts as a deal.
+4. **Score.** The verdict is computed in plain code from asking price ÷ market midpoint: ≤ 60% is a *steal*, ≤ 75% *great*, ≤ 85% *good*. A low-confidence estimate can't produce a steal. This keeps the ranking deterministic and testable.
+5. **Verify.** The top five go to Claude Sonnet 5.5 with the web search tool, which looks up recent second-hand prices, revises the range, lists red flags and links its sources.
+6. **Show the bill.** Token usage and searches from each response are priced and shown live. A scan of about 150 listings typically costs a few cents.
+
+## Use it
+
+1. Open the [install page](https://catnotbat.github.io/deal-sniper/#install) and drag **Deal Sniper** to your bookmarks bar.
+2. Open a Facebook Marketplace search (for example "macbook" near you) and click the bookmark.
+3. Let it auto-scroll, or scroll yourself; then press **Find deals**.
+4. Paste an Anthropic API key the first time. Create a dedicated key with a low spend limit in the [Anthropic Console](https://console.anthropic.com/settings/keys).
+
+### About the API key
+
+The results page calls `api.anthropic.com` directly from your browser (`dangerouslyAllowBrowser: true` in the SDK). That is only reasonable because the key is **yours** and stays on **your** device:
+
+- it is kept in `localStorage` for this site (or `sessionStorage` if you untick "remember") and sent only to `api.anthropic.com`;
+- the page's Content-Security-Policy allows network requests to that host only, and all listing text is rendered with `textContent`, never as HTML;
+- the bookmarklet never sees the key.
+
+## Develop
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/deal-sniper.git
-cd deal-sniper/worker
 npm install
+npm test          # vitest: parsing, handoff, scoring, pipeline (with a fake client), rendering
+npm run dev       # build + serve dist/ on http://localhost:8000 with rebuild on change
+npm run build     # static site in dist/
 ```
 
-### 2. Get your API keys
-
-#### eBay Developer Account
-1. Go to [developer.ebay.com](https://developer.ebay.com) → sign up
-2. Create an application (name it anything, e.g. "deal-sniper")
-3. Your keyset will be disabled — click **"apply for an exemption"** under Marketplace Account Deletion
-   - Select "I do not persist eBay data"
-   - In additional info: "My application uses the Browse API to search public listings for price comparison. It does not store eBay user data."
-4. Once approved, copy your **App ID (Client ID)** and **Cert ID (Client Secret)** from the Production keyset
-
-#### Anthropic API Key
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Create an API key
-
-#### Auth Token
-Generate a random token for bookmarklet authentication:
-```bash
-openssl rand -hex 32
-```
-
-### 3. Configure the Worker
-
-```bash
-cd worker
-
-# Copy the example env file for local development
-cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your real keys
-
-# Set production secrets
-npx wrangler secret put EBAY_CLIENT_ID
-npx wrangler secret put EBAY_CLIENT_SECRET
-npx wrangler secret put ANTHROPIC_API_KEY
-npx wrangler secret put AUTH_TOKEN
-npx wrangler secret put EBAY_VERIFICATION_TOKEN
-```
-
-### 4. Deploy
-
-```bash
-npx wrangler deploy
-```
-
-Note your worker URL (e.g. `https://deal-sniper.YOUR-SUBDOMAIN.workers.dev`).
-
-### 5. Set up the Bookmarklet
-
-1. Open `bookmarklet/deal-sniper.js`
-2. Replace the two config values at the top:
-   ```js
-   var WORKER_URL = "https://deal-sniper.YOUR-SUBDOMAIN.workers.dev";
-   var AUTH_TOKEN = "your-auth-token-from-step-2";
-   ```
-3. Minify and URL-encode the bookmarklet (use any JS minifier, or paste the whole file into the browser console prefixed with `javascript:`)
-4. Create a new bookmark in your browser and paste the encoded bookmarklet as the URL
-
-### 6. Use it
-
-1. Go to [Facebook Marketplace](https://www.facebook.com/marketplace) and set your search filters
-2. Click the bookmarklet — a side panel appears
-3. Click **Scroll & Scrape** to auto-scroll and collect listings
-4. Click **Find Deals** — opens a new tab with results
-5. Only STEAL / GREAT / GOOD deals are shown
-
-## Project Structure
+When served from your own origin, the install page writes that origin into the bookmarklet, so a fork works without any configuration. GitHub Pages deploys from `main` via `.github/workflows/pages.yml`.
 
 ```
-deal-sniper/
-├── bookmarklet/
-│   └── deal-sniper.js        # Bookmarklet source (readable)
-├── worker/
-│   ├── src/
-│   │   ├── index.ts           # Main handler, auth, pipeline
-│   │   ├── ebay.ts            # eBay OAuth + Browse API + Hebrew translation
-│   │   ├── claude.ts          # Claude AI deal analysis
-│   │   └── types.ts           # TypeScript interfaces
-│   ├── wrangler.toml          # Cloudflare Worker config
-│   ├── package.json
-│   └── .dev.vars.example      # Template for local dev secrets
-├── .gitignore
-└── README.md
+src/core/        price & card parsing, handoff codec, prompts, pipeline, scoring, cost
+src/bookmarklet/ scraper + shadow-DOM panel (bundled into a javascript: URL)
+src/app/         results page and install page
+site/            static HTML, CSS and the sample run (demo.json)
+scripts/         build and sample-data generation
 ```
 
-## How Deal Scoring Works
+## History
 
-| Tier | Criteria | Description |
-|------|----------|-------------|
-| STEAL | >60% below market | Absurdly cheap — worth immediate action |
-| GREAT | 40-60% below market | Excellent deal |
-| GOOD | 25-40% below market | Solid deal, worth checking |
+The first version (June 2026, still in the git history) was a Cloudflare Worker that priced listings against eBay's Browse API. eBay's US listings were a poor proxy for local second-hand prices, and the setup needed four secrets and a deployed backend. This version drops the backend in favour of Claude estimates plus web-search verification, which work in the listing's own market and currency and need nothing but an API key.
 
-Items below 25% discount, unidentifiable products, and non-electronics are automatically filtered out.
+## Disclaimer
 
-## Hebrew Support
-
-The worker translates common Hebrew brand transliterations before searching eBay:
-
-| Hebrew | English |
-|--------|---------|
-| לנובו | Lenovo |
-| דל | Dell |
-| סמסונג | Samsung |
-| אפל | Apple |
-| מקבוק | MacBook |
-| אסוס | Asus |
-| מחשב נייד | laptop |
-| מחשב גיימינג | gaming PC |
-| מסך | monitor |
-
-## API Limits
-
-- **eBay**: 5,000 Browse API calls/day (free tier). Each listing = 1 call. Non-electronics are pre-filtered to save calls.
-- **Claude**: Pay-per-use. Uses Haiku (cheapest model). Typically < $0.01 per batch of 30 listings.
-- **Cloudflare Worker**: 100,000 requests/day on free tier.
+An independent hobby project, not affiliated with Meta or Anthropic. It reads only the page you have open, at the pace you scroll, but automated collection may still conflict with Facebook's terms of service; use it on your own searches and at your own risk. Price estimates can be wrong. Always check the item in person.
 
 ## License
 
-MIT
+[MIT](LICENSE)

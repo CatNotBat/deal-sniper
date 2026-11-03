@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; connect-src 'self' https://api.anthropic.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Deal Sniper · Results</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>
+        Deal Sniper
+      </a>
+      <span class="spacer"></span>
+      <span class="meter" id="cost-meter" hidden>this scan <b id="cost-value">$0.00</b></span>
+      <button class="btn btn-ghost btn-sm" id="settings-btn" type="button">Settings</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- No listings in the URL and not a demo -->
+    <section class="view narrow" id="view-empty" hidden>
+      <div class="panel">
+        <h1>Nothing to appraise yet</h1>
+        <p class="sub">Open a Facebook Marketplace search, click the Deal Sniper bookmark, scroll or let it auto-scroll, then press <b>Find deals</b>. This page opens with the listings.</p>
+        <div class="cta">
+          <a class="btn btn-accent" href="?demo">See a sample run</a>
+          <a class="btn btn-ghost" href="./#install">Install the bookmarklet</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Listings arrived but no API key yet -->
+    <section class="view narrow" id="view-key" hidden>
+      <div class="panel">
+        <h1>Add your Anthropic API key</h1>
+        <p class="sub"><span id="key-count">0 listings</span> are waiting. The key stays in this browser and is sent only to api.anthropic.com.</p>
+        <form id="key-form" novalidate>
+          <div class="field">
+            <label for="key-input">API key</label>
+            <input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" required>
+            <small>Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>. A dedicated key with a low spend limit is a good idea.</small>
+          </div>
+          <label class="check"><input type="checkbox" id="key-remember" checked> Remember on this device (otherwise it is forgotten when the tab closes)</label>
+          <p class="note" id="key-error" role="alert" hidden></p>
+          <div class="cta mt">
+            <button class="btn btn-accent" type="submit">Find deals</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Pipeline running -->
+    <section class="view narrow" id="view-run" hidden>
+      <div class="panel">
+        <h1 id="run-title">Appraising listings…</h1>
+        <p class="sub" id="run-detail">Starting</p>
+        <div class="progress" id="run-progress"><span></span></div>
+        <ul class="run-log" id="run-log"></ul>
+        <div class="cta mt">
+          <button class="btn btn-ghost btn-sm" id="run-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error -->
+    <section class="view narrow" id="view-error" hidden>
+      <div class="panel">
+        <h1 id="error-title">Something went wrong</h1>
+        <p class="sub" id="error-detail"></p>
+        <div class="cta">
+          <button class="btn btn-accent" id="error-retry" type="button">Try again</button>
+          <button class="btn btn-ghost" id="error-key" type="button">Change API key</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="view" id="view-results" hidden>
+      <div class="banner" id="demo-banner" hidden>
+        <strong>Sample run.</strong>
+        <span>Synthetic listings and saved model output, so you can see the result without a key.</span>
+        <span class="spacer"></span>
+        <a class="btn btn-sm btn-ghost" href="./#install">Try it on your own search</a>
+      </div>
+      <div class="summary">
+        <h1 id="results-title">Deals</h1>
+        <span class="stats" id="results-stats"></span>
+      </div>
+      <div class="filters" id="filters" role="toolbar" aria-label="Filter by verdict"></div>
+      <ol class="deals" id="deal-list"></ol>
+      <p class="empty-state" id="results-empty" hidden>No listings in this filter.</p>
+      <details class="skipped" id="skipped" hidden>
+        <summary id="skipped-summary">Skipped</summary>
+        <ul id="skipped-list"></ul>
+      </details>
+    </section>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settings-form">
+      <h2>Settings</h2>
+      <div class="field">
+        <span class="label">API key</span>
+        <small id="settings-key-status">No key saved.</small>
+        <div class="cta"><button class="btn btn-ghost btn-sm" type="button" id="settings-forget">Forget key</button></div>
+      </div>
+      <div class="field">
+        <label for="settings-model">Screening model</label>
+        <select id="settings-model">
+          <option value="claude-haiku-5-5">Claude Haiku 5.5 (fast, cheapest)</option>
+          <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (sharper, about 20× the cost)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="settings-verify">Verify the top N deals with web search</label>
+        <input id="settings-verify" type="number" min="0" max="10" step="1">
+        <small>Uses Claude Sonnet 5.5 and up to three searches per deal (about $0.03 each). 0 turns it off.</small>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost btn-sm" value="cancel" formnovalidate>Close</button>
+        <button class="btn btn-sm" value="save" id="settings-save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="tpl-deal">
+    <li class="deal" data-verdict="unknown">
+      <a class="deal-media" target="_blank" rel="noopener noreferrer">
+        <span class="badge"></span>
+      </a>
+      <div class="deal-body">
+        <h3 class="deal-title"><a target="_blank" rel="noopener noreferrer"></a></h3>
+        <p class="deal-product"></p>
+        <div class="price-row">
+          <span class="price"></span>
+          <s class="was"></s>
+          <span class="saving"></span>
+          <span class="market"></span>
+        </div>
+        <div class="range" aria-hidden="true"><span class="range-band"></span><span class="range-mark"></span></div>
+        <p class="deal-reason"></p>
+        <div class="verify" hidden>
+          <div class="verify-head"></div>
+          <p class="verify-summary"></p>
+          <ul class="flags"></ul>
+          <ul class="sources"></ul>
+        </div>
+        <p class="deal-meta"></p>
+      </div>
+    </li>
+  </template>
+</body>
+</html>

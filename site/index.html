@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Deal Sniper</title>
+  <meta name="description" content="A bookmarklet that reads the Facebook Marketplace page you are on and uses Claude to flag listings priced well below their used-market value.">
+  <meta property="og:title" content="Deal Sniper">
+  <meta property="og:description" content="Find underpriced electronics on Facebook Marketplace with Claude. Runs in your browser with your own API key.">
+  <meta property="og:image" content="og.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="landing.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>
+        Deal Sniper
+      </a>
+      <span class="spacer"></span>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/CatNotBat/deal-sniper">GitHub</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Facebook Marketplace × Claude</p>
+        <h1>Spot the <em>underpriced</em> listing before anyone else.</h1>
+        <p class="lede">Deal Sniper reads the Marketplace search you already have open, asks Claude what each item really sells for used, checks the best candidates with live web search, and ranks what is worth a message.</p>
+        <div class="cta">
+          <a class="btn btn-accent" href="app.html?demo">See a sample run</a>
+          <a class="btn btn-ghost" href="#install">Install the bookmarklet</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <p class="sub">No extension, no server, no account. A bookmark, a static page, and your own Anthropic API key.</p>
+        <ol class="steps">
+          <li>
+            <h3>Scrape what you see</h3>
+            <p>On a Marketplace search, click the bookmark. It scrolls the results and reads each listing card: title, price, location, photo.</p>
+          </li>
+          <li>
+            <h3>Estimate the market</h3>
+            <p>Claude Haiku identifies the exact model in any language and estimates its used price range in your local currency.</p>
+          </li>
+          <li>
+            <h3>Verify the best</h3>
+            <p>The strongest candidates go to Claude Sonnet with web search, which checks real second-hand prices and links its sources.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="install">
+      <div class="wrap">
+        <h2>Install</h2>
+        <p class="sub">Drag the button to your bookmarks bar. Then open a Facebook Marketplace search and click it.</p>
+        <div class="install">
+          <a class="bookmarklet" id="bookmarklet" href="#install" title="Drag me to your bookmarks bar">
+            <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>
+            Deal Sniper
+          </a>
+          <p id="install-hint">No bookmarks bar? Press <code>Ctrl</code>+<code>Shift</code>+<code>B</code> (<code>⌘</code>+<code>Shift</code>+<code>B</code> on a Mac). On mobile, bookmarklets are awkward; use a desktop browser.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Your key, your browser</h2>
+        <p class="sub">The results page talks to the Claude API directly from your browser. There is no backend to trust.</p>
+        <dl class="facts">
+          <div><dt>Where the key lives</dt><dd>In this browser's storage for this site only, or just for the tab if you untick "remember". It is sent only to api.anthropic.com.</dd></div>
+          <div><dt>What it costs</dt><dd>A typical scan of about 150 listings costs a few cents. The page shows the running cost of every scan.</dd></div>
+          <div><dt>What leaves Facebook</dt><dd>Listing text and prices travel in the page URL fragment, which browsers never send to a server.</dd></div>
+          <div><dt>Use a dedicated key</dt><dd>Create a separate key with a low spend limit in the Anthropic Console, so you can revoke it at any time.</dd></div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Deal Sniper is an independent hobby project, not affiliated with Meta or Anthropic. Automated access may conflict with Facebook's terms; use it on your own searches, at your own risk.</span>
+      <a href="https://github.com/CatNotBat/deal-sniper">Source on GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>
