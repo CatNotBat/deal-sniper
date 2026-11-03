@@ -6,7 +6,7 @@ It runs entirely in your browser with your own Anthropic API key. No server, no 
 
 **[Try the sample run →](https://catnotbat.github.io/deal-sniper/app.html?demo)** &nbsp;·&nbsp; **[Install →](https://catnotbat.github.io/deal-sniper/#install)**
 
-<!-- screenshot: docs/screenshot.png -->
+![Results page from the sample run](docs/screenshot.png)
 
 ## How it works
 
