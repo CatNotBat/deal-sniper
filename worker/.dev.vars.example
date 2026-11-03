@@ -1,0 +1,5 @@
+EBAY_CLIENT_ID=your-ebay-app-id
+EBAY_CLIENT_SECRET=your-ebay-cert-id
+ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+AUTH_TOKEN=generate-with-openssl-rand-hex-32
+EBAY_VERIFICATION_TOKEN=any-random-string
