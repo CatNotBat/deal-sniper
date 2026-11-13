@@ -70,7 +70,19 @@
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>
             Deal Sniper
           </a>
-          <p id="install-hint">No bookmarks bar? Press <code>Ctrl</code>+<code>Shift</code>+<code>B</code> (<code>⌘</code>+<code>Shift</code>+<code>B</code> on a Mac). On mobile, bookmarklets are awkward; use a desktop browser.</p>
+          <p id="install-hint">No bookmarks bar? Press <code>Ctrl</code>+<code>Shift</code>+<code>B</code> (<code>⌘</code>+<code>Shift</code>+<code>B</code> on a Mac).</p>
+        </div>
+        <div class="install install-mobile">
+          <button class="btn btn-ghost" id="copy-bookmarklet" type="button">Copy bookmark code</button>
+          <div>
+            <p><strong>On a phone</strong> you can't drag. Copy the code instead, then:</p>
+            <ol class="mobile-steps">
+              <li>Bookmark any page and name it <em>Deal Sniper</em>.</li>
+              <li>Edit that bookmark and paste the code over its address.</li>
+              <li>On a Marketplace search in the browser (not the Facebook app), open your bookmarks and tap it.</li>
+            </ol>
+            <p id="copy-status" role="status" aria-live="polite"></p>
+          </div>
         </div>
       </div>
     </section>
